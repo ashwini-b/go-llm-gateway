@@ -1,0 +1,28 @@
+# Compiled binaries
+/bin/
+/gateway
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage output
+*.test
+*.out
+
+# Go build cache (rare to see locally, but just in case)
+*.o
+*.a
+
+# IntelliJ
+.idea/
+*.iml
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets (relevant once you add config.yaml with API keys, Day 9+)
+.env
+config.local.yaml
