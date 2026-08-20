@@ -1,7 +1,7 @@
 package main
 
 import (
-	"llm-gateway/internal/provider"
+	"llm-gateway/internal/config"
 	"log"
 	"net/http"
 	"time"
@@ -24,13 +24,24 @@ log.Println("Listening on port:8080")
 */
 func main() {
 
-	registry := provider.NewRegistry()
+	/*registry := provider.NewRegistry()
 	ollama := provider.NewOllamaProvider("http://localhost:11434")
 	registry.Register("llama3", ollama)
+	*/
+
+	cfg, err := config.Load("config.yaml")
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	reg, err := config.BuildRegistry(cfg)
+	if err != nil {
+		log.Fatalf("failed to build provider registry: %v", err)
+	}
 
 	r := chi.NewRouter()
 	r.Get("/healthz", handler.Healthz)
-	r.Post("/v1/chat/completions", handler.ChatCompletions(registry))
+	r.Post("/v1/chat/completions", handler.ChatCompletions(reg))
 
 	srv := &http.Server{
 		Addr:         ":8080",

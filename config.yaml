@@ -1,0 +1,11 @@
+# config.yaml
+server:
+  port: 8080
+
+models:
+  - name: "llama3"
+    provider: "ollama"
+    base_url: "http://localhost:11434"
+  - name: "llama3.1"
+    provider: "ollama"
+    base_url: "http://localhost:11434"
