@@ -1,8 +1,10 @@
 package main
 
 import (
+	"llm-gateway/internal/provider"
 	"log"
 	"net/http"
+	"time"
 
 	"llm-gateway/internal/handler"
 
@@ -21,9 +23,24 @@ log.Println("Listening on port:8080")
 	}
 */
 func main() {
+
+	registry := provider.NewRegistry()
+	ollama := provider.NewOllamaProvider("http://localhost:11434")
+	registry.Register("llama3", ollama)
+
 	r := chi.NewRouter()
 	r.Get("/healthz", handler.Healthz)
-	r.Post("/v1/chat/completions", handler.ChatCompletions)
+	r.Post("/v1/chat/completions", handler.ChatCompletions(registry))
+
+	srv := &http.Server{
+		Addr:         ":8080",
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 60 * time.Second, // generous — CPU inference is slow
+	}
+
 	log.Println("listening on :8080")
-	http.ListenAndServe(":8080", r)
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatalf("server failed: %v", err)
+	}
 }
