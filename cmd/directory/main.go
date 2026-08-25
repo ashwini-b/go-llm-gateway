@@ -2,13 +2,17 @@ package main
 
 import (
 	"llm-gateway/internal/config"
+	"llm-gateway/internal/logger"
+	"llm-gateway/internal/middleware"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"llm-gateway/internal/handler"
 
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/time/rate"
 )
 
 /*
@@ -39,9 +43,25 @@ func main() {
 		log.Fatalf("failed to build provider registry: %v", err)
 	}
 
+	validKeys := make(map[string]bool)
+	for _, k := range cfg.Auth.APIKeys {
+		validKeys[k] = true
+	}
+
+	rateLimiter := middleware.NewRateLimiter(rate.Limit(cfg.RateLimit.RPS), cfg.RateLimit.Burst) // new
+	logger := logger.New(logger.ParseLevel(cfg.Log.Level))
 	r := chi.NewRouter()
-	r.Get("/healthz", handler.Healthz)
-	r.Post("/v1/chat/completions", handler.ChatCompletions(reg))
+	r.Use(middleware.RequestLogger(logger))
+	r.Get("/healthz", handler.Healthz) // no auth
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.APIKeyAuth(validKeys))
+		r.Use(rateLimiter.Middleware)
+		r.Post("/v1/chat/completions", handler.ChatCompletions(reg))
+	})
+
+	/*r.Get("/healthz", handler.Healthz)
+	r.Post("/v1/chat/completions", handler.ChatCompletions(reg))*/
 
 	srv := &http.Server{
 		Addr:         ":8080",
@@ -50,8 +70,9 @@ func main() {
 		WriteTimeout: 60 * time.Second, // generous — CPU inference is slow
 	}
 
-	log.Println("listening on :8080")
+	logger.Info("listening on :8080")
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("server failed: %v", err)
+		logger.Error("server failed: %v", err)
+		os.Exit(1)
 	}
 }

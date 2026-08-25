@@ -9,8 +9,22 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig  `yaml:"server"`
-	Models []ModelConfig `yaml:"models"`
+	Server    ServerConfig  `yaml:"server"`
+	Models    []ModelConfig `yaml:"models"`
+	Auth      AuthConfig    `yaml:"auth"`
+	Log       LogConfig     `yaml:"log"`
+	RateLimit RateLimiting  `yaml:"rate_limit"`
+}
+
+type RateLimiting struct {
+	Burst int     `yaml:"burst""`
+	RPS   float64 `yaml:"rps""`
+}
+type LogConfig struct {
+	Level string `yaml:"level"`
+}
+type AuthConfig struct {
+	APIKeys []string `yaml:"api_keys"`
 }
 
 type ServerConfig struct {

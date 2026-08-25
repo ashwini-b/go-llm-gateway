@@ -1,11 +1,17 @@
 # config.yaml
 server:
   port: 8080
-
+auth:
+  api_keys:
+    - "sk-dev-abc123"
+    - "sk-dev-xyz789"
 models:
   - name: "llama3"
     provider: "ollama"
     base_url: "http://localhost:11434"
-  - name: "llama3.1"
-    provider: "ollama"
-    base_url: "http://localhost:11434"
+log:
+  level: "info"
+
+rate_limit:
+  - rps: 2
+  - burst: 5
