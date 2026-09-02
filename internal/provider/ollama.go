@@ -10,10 +10,15 @@ import (
 	"time"
 )
 
+type ollamaOptions struct {
+	Temperature *float64 `json:"temperature,omitempty"`
+}
+
 type ollamaChatRequest struct {
 	Model    string          `json:"model"`
 	Messages []ollamaMessage `json:"messages"`
 	Stream   bool            `json:"stream"`
+	Options  *ollamaOptions  `json:"options,omitempty"`
 }
 
 type ollamaMessage struct {
@@ -41,6 +46,10 @@ func (o *OllamaProvider) Complete(ctx context.Context, req model.ChatRequest) (m
 	// translate model.ChatRequest -> ollamaChatRequest, call Ollama, translate back
 
 	ollamaMsg := make([]ollamaMessage, len(req.Messages))
+	var opts *ollamaOptions
+	if req.Temperature != nil {
+		opts = &ollamaOptions{Temperature: req.Temperature}
+	}
 
 	for i, m := range req.Messages {
 		ollamaMsg[i] = ollamaMessage{Role: m.Role,
@@ -48,7 +57,9 @@ func (o *OllamaProvider) Complete(ctx context.Context, req model.ChatRequest) (m
 	}
 	ollamaReq := ollamaChatRequest{Model: req.Model,
 		Messages: ollamaMsg,
-		Stream:   false}
+		Stream:   false,
+		Options:  opts,
+	}
 
 	payload, err := json.Marshal(ollamaReq)
 	if err != nil {

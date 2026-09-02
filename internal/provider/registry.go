@@ -31,3 +31,17 @@ func (r *Registry) Get(modelName string) (Provider, error) {
 	}
 	return p, nil
 }
+func (r *Registry) GetAll(names []string) ([]Provider, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	providers := make([]Provider, 0, len(names))
+	for _, name := range names {
+		p, ok := r.providers[name]
+		if !ok {
+			return nil, fmt.Errorf("provider %q not registered", name)
+		}
+		providers = append(providers, p)
+	}
+	return providers, nil
+}

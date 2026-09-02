@@ -1,8 +1,9 @@
 package model
 
 type ChatRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
+	Model       string    `json:"model"`
+	Messages    []Message `json:"messages"`
+	Temperature *float64  `json:"temeperature,omitempty"`
 }
 
 type Message struct {

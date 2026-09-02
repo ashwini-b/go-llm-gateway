@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"llm-gateway/internal/metrics"
 	"net/http"
 	"sync"
 )
@@ -50,6 +51,7 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		}
 
 		if !rl.getLimiter(apiKey).Allow() {
+			metrics.RateLimitRejectionsTotal.Inc()
 			w.Header().Set("Retry-After", "1")
 			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 			return

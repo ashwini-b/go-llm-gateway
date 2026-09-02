@@ -14,8 +14,12 @@ type Config struct {
 	Auth      AuthConfig    `yaml:"auth"`
 	Log       LogConfig     `yaml:"log"`
 	RateLimit RateLimiting  `yaml:"rate_limit"`
+	Cache     CacheConfig   `yaml:"cache"`
 }
-
+type CacheConfig struct {
+	Enabled    bool `yaml:"enabled"`
+	TTLSeconds int  `yaml:"ttl_seconds"`
+}
 type RateLimiting struct {
 	Burst int     `yaml:"burst""`
 	RPS   float64 `yaml:"rps""`
@@ -32,8 +36,12 @@ type ServerConfig struct {
 }
 
 type ModelConfig struct {
-	Name     string `yaml:"name"`
-	Provider string `yaml:"provider"`
+	Name      string           `yaml:"name"`
+	Providers []ProviderConfig `yaml:"providers"`
+}
+
+type ProviderConfig struct {
+	Provider string `yaml:"provider"` // provider *type*, e.g. "ollama"
 	BaseURL  string `yaml:"base_url"`
 }
 
@@ -49,17 +57,24 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func BuildRegistry(cfg *Config) (*provider.Registry, error) {
+func BuildRegistry(cfg *Config) (*provider.Registry, map[string][]string, error) {
 	reg := provider.NewRegistry()
+	modelProviders := make(map[string][]string)
 	for _, m := range cfg.Models {
-		var p provider.Provider
-		switch m.Provider {
-		case "ollama":
-			p = provider.NewOllamaProvider(m.BaseURL)
-		default:
-			return nil, fmt.Errorf("unknown provider type %q for model %q", m.Provider, m.Name)
+		var keys []string
+		for i, pc := range m.Providers {
+			var p provider.Provider
+			switch pc.Provider {
+			case "ollama":
+				p = provider.NewOllamaProvider(pc.BaseURL)
+			default:
+				return nil, nil, fmt.Errorf("unknown provider type %q for model %q", pc.Provider, m.Name)
+			}
+			instanceKey := fmt.Sprintf("%s-%s-%d", m.Name, pc.Provider, i)
+			reg.Register(instanceKey, p)
+			keys = append(keys, instanceKey)
 		}
-		reg.Register(m.Name, p)
+		modelProviders[m.Name] = keys
 	}
-	return reg, nil
+	return reg, modelProviders, nil
 }

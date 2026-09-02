@@ -1,1 +1,1 @@
-{"model":"llama3","messages":[{"role":"user","content":"hi"}]}
+{"model":"llama3","messages":[{"role":"user","content":"hi"}],"temperature":0}
